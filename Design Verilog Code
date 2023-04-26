@@ -1,0 +1,218 @@
+module hybrid_booth(x,y,p);
+input [7:0] x,y;
+output [14:0] p;
+wire [3:0] one,two,sign,cry;
+wire [9:0] PP1,PP2,PP3,PP4;
+wire [12:0] Sout1;
+wire [6:0] Sout2;
+wire [7:0] i,j,k,l,n,o,q,r;
+wire [12:0] c1;
+wire [6:0] c2;
+wire [1:0] c3;
+wire [3:0] S1,S2,S3,S4;
+wire C1,C2,C3,C4;
+
+// carry generation
+assign cry[0]=sign[0]&(one[0]^two[0]);
+assign cry[1]=sign[1]&(one[1]^two[1]);
+assign cry[2]=sign[2]&(one[2]^two[2]);
+
+code e2(one[0],two[0],sign[0],y[3],y[2],y[1]);
+code e3(one[1],two[1],sign[1],y[5],y[4],y[3]);
+code e4(one[2],two[2],sign[2],y[7],y[6],y[5]);
+
+//First product generation
+MUX4x1 a2(x,y[1],y[0],PP1);
+assign p[1:0]=PP1[1:0];
+assign PP1[9]=~PP1[8];
+
+//second product generation
+product q0(x[0],sign[0],cry[0],one[0],two[0],sign[0],PP2[0],j[0],o[0]);
+product q1(x[1],j[0],o[0],one[0],two[0],sign[0],PP2[1],j[1],o[1]);
+product q2(x[2],j[1],o[1],one[0],two[0],sign[0],PP2[2],j[2],o[2]);
+product q3(x[3],j[2],o[2],one[0],two[0],sign[0],PP2[3],j[3],o[3]);
+product q4(x[4],j[3],o[3],one[0],two[0],sign[0],PP2[4],j[4],o[4]);
+product q5(x[5],j[4],o[4],one[0],two[0],sign[0],PP2[5],j[5],o[5]);
+product q6(x[6],j[5],o[5],one[0],two[0],sign[0],PP2[6],j[6],o[6]);
+product q7(x[7],j[6],o[6],one[0],two[0],sign[0],PP2[7],j[7],o[7]);
+assign PP2[8]=((two[0]&j[7])|(one[0]&(j[7]^o[7])));
+assign PP2[9]=~PP2[8];
+
+//third product
+product r0(x[0],sign[1],cry[1],one[1],two[1],sign[1],PP3[0],k[0],q[0]);
+product r1(x[1],k[0],q[0],one[1],two[1],sign[1],PP3[1],k[1],q[1]);
+product r2(x[2],k[1],q[1],one[1],two[1],sign[1],PP3[2],k[2],q[2]);
+product r3(x[3],k[2],q[2],one[1],two[1],sign[1],PP3[3],k[3],q[3]);
+product r4(x[4],k[3],q[3],one[1],two[1],sign[1],PP3[4],k[4],q[4]);
+product r5(x[5],k[4],q[4],one[1],two[1],sign[1],PP3[5],k[5],q[5]);
+product r6(x[6],k[5],q[5],one[1],two[1],sign[1],PP3[6],k[6],q[6]);
+product r7(x[7],k[6],q[6],one[1],two[1],sign[1],PP3[7],k[7],q[7]);
+assign PP3[8]=((two[1]&k[7])|(one[1]&(k[7]^q[7])));
+assign PP3[9]=~PP3[8];
+
+//fourth product
+product s0(x[0],sign[2],cry[2],one[2],two[2],sign[2],PP4[0],l[0],r[0]);
+product s1(x[1],l[0],r[0],one[2],two[2],sign[2],PP4[1],l[1],r[1]);
+product s2(x[2],l[1],r[1],one[2],two[2],sign[2],PP4[2],l[2],r[2]);
+product s3(x[3],l[2],r[2],one[2],two[2],sign[2],PP4[3],l[3],r[3]);
+product s4(x[4],l[3],r[3],one[2],two[2],sign[2],PP4[4],l[4],r[4]);
+product s5(x[5],l[4],r[4],one[2],two[2],sign[2],PP4[5],l[5],r[5]);
+product s6(x[6],l[5],r[5],one[2],two[2],sign[2],PP4[6],l[6],r[6]);
+product s7(x[7],l[6],r[6],one[2],two[2],sign[2],PP4[7],l[7],r[7]);
+assign PP4[8]=((two[2]&l[7])|(one[2]&(l[7]^r[7])));
+assign PP4[9]=~PP4[8];
+
+//addition
+// 1st lvl add
+HAd h1(PP1[2],PP2[0],c1[0],Sout1[0]);
+HAd h2(PP1[3],PP2[1],c1[1],Sout1[1]);
+FAd f1(PP1[4],PP2[2],PP3[0],c1[2],Sout1[2]);
+FAd f2(PP1[5],PP2[3],PP3[1],c1[3],Sout1[3]);
+FAd f3(PP1[6],PP2[4],PP3[2],c2[0],Sout2[0]);
+FAd f4(PP1[7],PP2[5],PP3[3],c2[1],Sout2[1]);
+FAd f5(PP1[8],PP2[6],PP3[4],c2[2],Sout2[2]);
+FAd f6(PP1[8],PP2[7],PP3[5],c2[3],Sout2[3]);
+FAd f7(PP1[8],PP2[8],PP3[6],c2[4],Sout2[4]);
+FAd f8(PP1[9],PP2[9],PP3[7],c2[5],Sout2[5]);
+FAd f9(PP4[6],PP3[8],1'b1,c2[6],Sout2[6]);
+assign p[2]=Sout1[0];
+
+// 2nd lvl add
+HAd h3(PP4[0],Sout2[0],c1[4],Sout1[4]);
+FAd f10(PP4[1],Sout2[1],c2[0],c1[5],Sout1[5]);
+FAd f11(PP4[2],Sout2[2],c2[1],c1[6],Sout1[6]);
+FAd f12(PP4[3],Sout2[3],c2[2],c1[7],Sout1[7]);
+FAd f13(PP4[4],Sout2[4],c2[3],c1[8],Sout1[8]);
+FAd f14(PP4[5],Sout2[5],c2[4],c1[9],Sout1[9]);
+HAd h4(Sout2[6],c2[5],c1[10],Sout1[10]);
+FAd f15(PP4[7],PP3[9],c2[6],c1[11],Sout1[11]);
+HAd h5(PP4[8],1'b1,c1[12],Sout1[12]);
+
+//3th add
+defparam Z3.N=4;
+defparam Z4.N=4;
+defparam Z5.N=4;
+defparam b1.N=4;
+defparam Z6.N=4;
+defparam Z7.N=4;
+defparam b2.N=4;
+
+CLA Z3 (c1[3:0],Sout1[4:1],1'b0,p[6:3],c3[0]); 
+CLA Z4 (c1[7:4],Sout1[8:5],1'b0,S1,C1);
+CLA Z5 (c1[7:4],Sout1[8:5],1'b1,S2,C2);
+MUX2x1 b1(S2,S1,c3[0],p[10:7]);
+assign c3[1]=(~c3[0]&C1)|(c3[0]&C2); 
+
+CLA Z6 (c1[11:8],Sout1[12:9],1'b0,S3,C3);
+CLA Z7 (c1[11:8],Sout1[12:9],1'b1,S4,C4);
+MUX2x1 b2(S4,S3,c3[1],p[14:11]);
+
+endmodule
+
+module MUX4x1(X,S1,S0,out);
+  input [7:0] X;
+  input S0,S1;
+  output reg[8:0]out;
+  wire [7:0] XN;
+    assign XN=~X+1;
+    always @ (X or S0 or S1)
+    begin
+      case ({S1,S0})
+        2'b00: out<=8'b00000000;
+        2'b01: out<={{1{X[7]}},X};
+        2'b10: out<=XN<<1;
+        2'b11: out<={{1{XN[7]}},XN};
+	endcase
+    end
+endmodule
+
+// generation of codes
+
+module code(one,two,sign,y2,y1,y0);
+input y2,y1,y0;
+output one,two,sign;
+wire [1:0]k;
+xor x1(one,y0,y1);
+xor x2(k[1],y2,y1);
+not n1(k[0],one);
+and a1(two,k[0],k[1]);
+assign sign=y2;
+endmodule
+
+//generation of inner products
+
+module product(x1,x0,x2,one,two,sign,p,i,ca);
+input x1,x0,x2,sign,one,two;
+output p,i,ca;
+wire [2:0] k;
+xor xo1(i,x1,sign);
+and a1(k[1],i,one);
+and a0(k[0],x0,two);
+or o0(k[2],k[1],k[0]);
+xor xo2(p,k[2],x2);
+and a2(ca,k[2],x2);
+endmodule
+
+//adders design
+module HAd(a,b,c,s);
+input a,b;
+output c,s;
+xor x1(s,a,b);
+and a1(c,a,b);
+endmodule
+
+module FAd(a,b,c,cy,sm);
+input a,b,c;
+output cy,sm;
+wire x,y;
+xor x1(x,a,b);
+xnor x2(y,a,b);
+MUX m1(x,y,c,sm);
+MUX m2(a,c,x,cy);
+endmodule
+
+module MUX(i0,i1,s,o);
+input i0,i1,s;
+output o;
+wire t,p,q;
+and a1(t,s,i1);
+not n0(p,s);
+and a2(q,p,i0);
+or a3(o,t,q);
+endmodule
+
+module CLA # (parameter N=2) (Ax,Bx,Cin,S,Cx);
+  input [N-1:0]Ax,Bx;
+  input Cin;
+  output reg[N-1:0]S;
+  output reg Cx;
+  reg [N:0]Cxx;
+  reg [N-1:0]Px,G;
+  integer i;
+  always@(*)
+    begin
+      for(i=0;i<(N+1);i=i+1)
+        begin 
+          Cxx[0]=Cin;
+          Px[i]=Ax[i]^Bx[i];
+          G[i]=Ax[i]&Bx[i];
+          Cxx[i+1]=G[i]+(Px[i]&Cxx[i]);
+          S[i]=Px[i]^Cxx[i];
+        end
+       Cx=Cxx[N]; 
+        end
+      endmodule
+      
+module MUX2x1 #(parameter N=1) (I1,I0,S0,out);
+        input [N:0]I0;
+        input [N:0]I1;
+        input S0;
+        output reg[N:0]out; 
+       always @ (I0 or I1 or S0 )
+        begin
+        case (S0)
+         0:out<=I0;
+         1:out<=I1;
+        endcase
+        end
+      endmodule   
